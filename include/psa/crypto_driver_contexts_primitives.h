@@ -31,6 +31,15 @@
 /* Include the context structure definitions for those drivers that were
  * declared during the autogeneration process. */
 
+#if defined(PSA_CRYPTO_DRIVER_SILABS_HSE)
+#include "sli_psa_driver_features.h"
+#include "sli_se_transparent_types.h"
+
+#if defined(SLI_PSA_DRIVER_FEATURE_OPAQUE_KEYS)
+#include "sli_se_opaque_types.h"
+#endif
+#endif
+
 #if defined(MBEDTLS_TEST_LIBTESTDRIVER1)
 #if defined(TF_PSA_CRYPTO_TEST_LIBTESTDRIVER1)
 #include "mbedtls/private/libtestdriver1-crypto_builtin_primitives.h"
@@ -112,6 +121,9 @@ typedef union {
 #if defined(PSA_CRYPTO_DRIVER_TEST)
     mbedtls_transparent_test_driver_hash_operation_t test_driver_ctx;
 #endif
+#if defined(PSA_CRYPTO_DRIVER_SILABS_HSE)
+    sli_se_transparent_hash_operation_t sli_se_transparent_ctx;
+#endif /* PSA_CRYPTO_DRIVER_SILABS_HSE */
 } psa_driver_hash_context_t;
 
 typedef union {
@@ -129,6 +141,12 @@ typedef union {
     mbedtls_transparent_test_driver_cipher_operation_t transparent_test_driver_ctx;
     mbedtls_opaque_test_driver_cipher_operation_t opaque_test_driver_ctx;
 #endif
+#if defined(PSA_CRYPTO_DRIVER_SILABS_HSE)
+    sli_se_transparent_cipher_operation_t sli_se_transparent_ctx;
+#if defined(PSA_CRYPTO_DRIVER_SILABS_HSE) && defined(SLI_PSA_DRIVER_FEATURE_OPAQUE_KEYS)
+    sli_se_opaque_cipher_operation_t sli_se_opaque_ctx;
+#endif /* PSA_CRYPTO_DRIVER_SILABS_HSE  && SLI_PSA_DRIVER_FEATURE_OPAQUE_KEYS */
+#endif /* PSA_CRYPTO_DRIVER_SILABS_HSE */
 } psa_driver_cipher_context_t;
 
 #endif /* PSA_CRYPTO_DRIVER_CONTEXTS_PRIMITIVES_H */
