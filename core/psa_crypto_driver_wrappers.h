@@ -73,6 +73,16 @@
 #endif /* SLI_PSA_DRIVER_FEATURE_OPAQUE_KEYS */
 #endif /* PSA_CRYPTO_DRIVER_SILABS_VSE */
 
+#if defined(PSA_CRYPTO_DRIVER_SILABS_SI91X)
+#ifndef PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT
+#define PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT
+#endif
+#include "sli_si91x_crypto_driver_functions.h"
+#if defined(SLI_SECURE_KEY_STORAGE_DEVICE_SI91X)
+#include "sl_si91x_psa_wrap.h"
+#endif /* Secure key storage driver **/
+#endif /* PSA_CRYPTO_DRIVER_SILABS_SI91X */
+
 /* END-driver headers */
 
 /* Auto-generated values depending on which drivers are registered.
@@ -86,6 +96,7 @@
 #define PSA_CRYPTO_SILABS_HSE_TRANSPARENT_DRIVER_ID (5)
 #define PSA_CRYPTO_SILABS_HSE_OPAQUE_DRIVER_ID (6)
 #define PSA_CRYPTO_SILABS_VSE_TRANSPARENT_DRIVER_ID (7)
+#define PSA_CRYPTO_SILABS_SI91X_DRIVER_ID (8)
 
 /* END-driver id */
 
@@ -120,6 +131,12 @@ static inline psa_status_t psa_driver_wrapper_init( void )
 
 #if defined(PSA_CRYPTO_DRIVER_SILABS_VSE)
     status = sli_cryptoacc_transparent_driver_init();
+    if( status != PSA_SUCCESS )
+        return( status );
+#endif
+
+#if defined(PSA_CRYPTO_DRIVER_SILABS_SI91X) && defined(SLI_TRNG_DEVICE_SI91X)
+    status = sli_si91x_crypto_trng_init();
     if( status != PSA_SUCCESS )
         return( status );
 #endif
@@ -187,6 +204,20 @@ static inline psa_status_t psa_driver_wrapper_sign_message(
             if( status != PSA_ERROR_NOT_SUPPORTED )
                 return( status );
 #endif
+#if defined(PSA_CRYPTO_DRIVER_SILABS_SI91X) && defined(SLI_ECDSA_DEVICE_SI91X)
+            status = sli_si91x_crypto_sign_message( attributes,
+                                                    key_buffer,
+                                                    key_buffer_size,
+                                                    alg,
+                                                    input,
+                                                    input_length,
+                                                    signature,
+                                                    signature_size,
+                                                    signature_length);
+            /* Declared with fallback == true */
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
             break;
 
@@ -222,6 +253,22 @@ static inline psa_status_t psa_driver_wrapper_sign_message(
             /* No fallback for opaque */
             return( status );
 #endif
+#if defined(PSA_CRYPTO_DRIVER_SILABS_SI91X)
+#if defined(SLI_ECDSA_DEVICE_SI91X) && defined(SLI_SECURE_KEY_STORAGE_DEVICE_SI91X)
+        case PSA_KEY_VOLATILE_PERSISTENT_WRAPPED:
+        case PSA_KEY_VOLATILE_PERSISTENT_WRAP_IMPORT:
+            status = sli_si91x_crypto_sign_message( attributes,
+                                                    key_buffer,
+                                                    key_buffer_size,
+                                                    alg,
+                                                    input,
+                                                    input_length,
+                                                    signature,
+                                                    signature_size,
+                                                    signature_length);
+            return status;
+#endif
+#endif /* PSA_CRYPTO_DRIVER_SILABS_SI91X */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
         default:
             /* Key is declared with a lifetime not known to us */
@@ -287,6 +334,19 @@ static inline psa_status_t psa_driver_wrapper_verify_message(
             if( status != PSA_ERROR_NOT_SUPPORTED )
                 return( status );
 #endif
+#if defined(PSA_CRYPTO_DRIVER_SILABS_SI91X) && defined(SLI_ECDSA_DEVICE_SI91X)
+            status = sli_si91x_crypto_verify_message( attributes,
+                                                      key_buffer,
+                                                      key_buffer_size,
+                                                      alg,
+                                                      input,
+                                                      input_length,
+                                                      signature,
+                                                      signature_length);
+            /* Declared with fallback == true */
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
             break;
 
@@ -320,6 +380,20 @@ static inline psa_status_t psa_driver_wrapper_verify_message(
             /* No fallback for opaque */
             return( status );
 #endif
+#if defined(PSA_CRYPTO_DRIVER_SILABS_SI91X)
+#if defined(SLI_ECDSA_DEVICE_SI91X) && defined(SLI_SECURE_KEY_STORAGE_DEVICE_SI91X)
+        case PSA_KEY_VOLATILE_PERSISTENT_WRAPPED:
+          status = sli_si91x_crypto_verify_message( attributes,
+                                                    key_buffer,
+                                                    key_buffer_size,
+                                                    alg,
+                                                    input,
+                                                    input_length,
+                                                    signature,
+                                                    signature_length);
+            return status;
+#endif
+#endif /* PSA_CRYPTO_DRIVER_SILABS_SI91X */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
         default:
             /* Key is declared with a lifetime not known to us */
@@ -846,6 +920,14 @@ static inline psa_status_t psa_driver_wrapper_get_key_buffer_size_from_key_data(
             *key_buffer_size = data_length;
             return( psa_driver_wrapper_get_key_buffer_size( attributes, key_buffer_size ) );
 #endif
+#if defined(PSA_CRYPTO_DRIVER_SILABS_SI91X) && defined(SLI_SECURE_KEY_STORAGE_DEVICE_SI91X)
+        case PSA_KEY_VOLATILE_PERSISTENT_WRAPPED:
+        case PSA_KEY_VOLATILE_PERSISTENT_WRAP_IMPORT:
+          *key_buffer_size = data_length;
+          return( ( *key_buffer_size != 0 ) ?
+                  PSA_SUCCESS : PSA_ERROR_NOT_SUPPORTED );
+          break;
+#endif
 
         default:
             (void)key_type;
@@ -916,6 +998,15 @@ static inline psa_status_t psa_driver_wrapper_generate_key(
                 if( status != PSA_ERROR_NOT_SUPPORTED )
                     break;
 #endif
+#if defined(PSA_CRYPTO_DRIVER_SILABS_SI91X) && defined(SLI_ECDH_DEVICE_SI91X)
+                status = sli_si91x_psa_generate_key_ecdh( attributes,
+                                                          key_buffer,
+                                                          key_buffer_size,
+                                                          key_buffer_length );
+                /* Declared with fallback == true */
+                if( status != PSA_ERROR_NOT_SUPPORTED )
+                    break;
+#endif // PSA_CRYPTO_DRIVER_SILABS_SI91X
 #if defined(MBEDTLS_PSA_P256M_DRIVER_ENABLED)
                 if( PSA_KEY_TYPE_IS_ECC( psa_get_key_type(attributes) ) &&
                     psa_get_key_type(attributes) == PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1) &&
@@ -956,6 +1047,29 @@ static inline psa_status_t psa_driver_wrapper_generate_key(
                                                  key_buffer_length );
             /* No fallback for opaque drivers */
             return status;
+#endif
+#if defined(PSA_CRYPTO_DRIVER_SILABS_SI91X) && defined(SLI_SECURE_KEY_STORAGE_DEVICE_SI91X)
+        case PSA_KEY_VOLATILE_PERSISTENT_WRAPPED:
+            if( PSA_KEY_TYPE_IS_ASYMMETRIC( attributes->type ) )
+            {
+              /* Software fallback for Si91x Devices */
+              status = psa_generate_key_internal(
+                  attributes, NULL, NULL, 0, key_buffer, key_buffer_size, key_buffer_length );
+              if( status == PSA_SUCCESS ){
+                  status = sli_si91x_crypto_wrap_key(key_buffer,
+                                                     *key_buffer_length,
+                                                     SL_SI91X_WRAP_IV_CBC_MODE,
+                                                     WRAP_IV);
+              }
+            } else {
+              /* symmetric key generation */
+              status = sli_si91x_crypto_generate_symm_key(key_buffer,
+                                                          key_buffer_size,
+                                                          SL_SI91X_WRAP_IV_CBC_MODE,
+                                                          WRAP_IV);
+            }
+            return status;
+            break;
 #endif
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 
@@ -1076,6 +1190,29 @@ static inline psa_status_t psa_driver_wrapper_import_key(
                          key_buffer_length, bits ) );
 #endif
 
+#if defined(PSA_CRYPTO_DRIVER_SILABS_SI91X) && defined(SLI_SECURE_KEY_STORAGE_DEVICE_SI91X)
+        case PSA_KEY_VOLATILE_PERSISTENT_WRAP_IMPORT:
+          status = psa_import_key_into_slot( attributes,
+                                            data, data_length,
+                                            key_buffer, key_buffer_size,
+                                            key_buffer_length, bits );
+          if( status == PSA_SUCCESS ){
+              status = sli_si91x_crypto_wrap_key(key_buffer,
+                                                 *key_buffer_length,
+                                                 SL_SI91X_WRAP_IV_CBC_MODE,
+                                                 WRAP_IV);
+          }
+          return( status );
+          break;
+
+        case PSA_KEY_VOLATILE_PERSISTENT_WRAPPED:
+          status = psa_import_key_into_slot( attributes,
+                                             data, data_length,
+                                             key_buffer, key_buffer_size,
+                                             key_buffer_length, bits );
+          return ( status );
+          break;
+#endif
 
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
         default:
@@ -1132,6 +1269,17 @@ static inline psa_status_t psa_driver_wrapper_export_key(
                                               data_length ) );
 #endif
 
+#if defined(PSA_CRYPTO_DRIVER_SILABS_SI91X) && defined(SLI_SECURE_KEY_STORAGE_DEVICE_SI91X)
+        case PSA_KEY_VOLATILE_PERSISTENT_WRAPPED:
+        case PSA_KEY_VOLATILE_PERSISTENT_WRAP_IMPORT:
+          return( psa_export_key_internal( attributes,
+                                           key_buffer,
+                                           key_buffer_size,
+                                           data,
+                                           data_size,
+                                           data_length ) );
+          break;
+#endif
 
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
         default:
@@ -1266,6 +1414,21 @@ static inline psa_status_t psa_driver_wrapper_cipher_encrypt(
             if( status != PSA_ERROR_NOT_SUPPORTED )
                 return( status );
 #endif /* PSA_CRYPTO_DRIVER_SILABS_VSE */
+#if defined(PSA_CRYPTO_DRIVER_SILABS_SI91X) && defined(SLI_CIPHER_DEVICE_SI91X)
+            status = sli_si91x_crypto_cipher_encrypt( attributes,
+                                                      key_buffer,
+                                                      key_buffer_size,
+                                                      alg,
+                                                      iv,
+                                                      iv_length,
+                                                      input,
+                                                      input_length,
+                                                      output,
+                                                      output_size,
+                                                      output_length );
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif /* PSA_CRYPTO_DRIVER_SILABS_SI91X */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 
 #if defined(MBEDTLS_PSA_BUILTIN_CIPHER)
@@ -1417,6 +1580,19 @@ static inline psa_status_t psa_driver_wrapper_cipher_decrypt(
             if( status != PSA_ERROR_NOT_SUPPORTED )
                 return( status );
 #endif
+#if defined(PSA_CRYPTO_DRIVER_SILABS_SI91X) && defined(SLI_CIPHER_DEVICE_SI91X)
+            status = sli_si91x_crypto_cipher_decrypt( attributes,
+                                                      key_buffer,
+                                                      key_buffer_size,
+                                                      alg,
+                                                      input,
+                                                      input_length,
+                                                      output,
+                                                      output_size,
+                                                      output_length );
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif /* PSA_CRYPTO_DRIVER_SILABS_SI91X */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 
 #if defined(MBEDTLS_PSA_BUILTIN_CIPHER)
@@ -1548,6 +1724,18 @@ static inline psa_status_t psa_driver_wrapper_cipher_encrypt_setup(
             if( status != PSA_ERROR_NOT_SUPPORTED )
                 return( status );
 #endif
+#if defined(PSA_CRYPTO_DRIVER_SILABS_SI91X) && defined(SLI_CIPHER_DEVICE_SI91X)
+            status = sli_si91x_crypto_cipher_encrypt_setup(
+                        &operation->ctx.sli_si91x_crypto_cipher_ctx,
+                        attributes,
+                        key_buffer,
+                        key_buffer_size,
+                        alg );
+            if( status == PSA_SUCCESS )
+                operation->id = PSA_CRYPTO_SILABS_SI91X_DRIVER_ID;
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif /* PSA_CRYPTO_DRIVER_SILABS_SI91X */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 #if defined(MBEDTLS_PSA_BUILTIN_CIPHER)
             /* Fell through, meaning no accelerator supports this operation */
@@ -1672,6 +1860,18 @@ static inline psa_status_t psa_driver_wrapper_cipher_decrypt_setup(
             if( status != PSA_ERROR_NOT_SUPPORTED )
                 return( status );
 #endif
+#if defined(PSA_CRYPTO_DRIVER_SILABS_SI91X) && defined(SLI_CIPHER_DEVICE_SI91X)
+            status = sli_si91x_crypto_cipher_decrypt_setup(
+                        &operation->ctx.sli_si91x_crypto_cipher_ctx,
+                        attributes,
+                        key_buffer,
+                        key_buffer_size,
+                        alg );
+            if( status == PSA_SUCCESS )
+                operation->id = PSA_CRYPTO_SILABS_SI91X_DRIVER_ID;
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 #if defined(MBEDTLS_PSA_BUILTIN_CIPHER)
             /* Fell through, meaning no accelerator supports this operation */
@@ -1786,6 +1986,12 @@ static inline psa_status_t psa_driver_wrapper_cipher_set_iv(
                         &operation->ctx.sli_se_opaque_ctx,
                         iv, iv_length ) );
 #endif
+#if defined(PSA_CRYPTO_DRIVER_SILABS_SI91X) && defined(SLI_CIPHER_DEVICE_SI91X)
+        case PSA_CRYPTO_SILABS_SI91X_DRIVER_ID:
+            return( sli_si91x_crypto_cipher_set_iv(
+                        &operation->ctx.sli_si91x_crypto_cipher_ctx,
+                        iv, iv_length ) );
+#endif
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
     }
 
@@ -1850,6 +2056,13 @@ static inline psa_status_t psa_driver_wrapper_cipher_update(
                         input, input_length,
                         output, output_size, output_length ) );
 #endif
+#if defined(PSA_CRYPTO_DRIVER_SILABS_SI91X) && defined(SLI_CIPHER_DEVICE_SI91X)
+        case PSA_CRYPTO_SILABS_SI91X_DRIVER_ID:
+            return( sli_si91x_crypto_cipher_update(
+                        &operation->ctx.sli_si91x_crypto_cipher_ctx,
+                        input, input_length,
+                        output, output_size, output_length ) );
+#endif
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
     }
 
@@ -1908,6 +2121,12 @@ static inline psa_status_t psa_driver_wrapper_cipher_finish(
                         &operation->ctx.sli_se_opaque_ctx,
                         output, output_size, output_length ) );
 #endif
+#if defined(PSA_CRYPTO_DRIVER_SILABS_SI91X) && defined(SLI_CIPHER_DEVICE_SI91X)
+        case PSA_CRYPTO_SILABS_SI91X_DRIVER_ID:
+            return( sli_si91x_crypto_cipher_finish(
+                        &operation->ctx.sli_si91x_crypto_cipher_ctx,
+                        output, output_size, output_length ) );
+#endif
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
     }
 
@@ -1963,6 +2182,11 @@ static inline psa_status_t psa_driver_wrapper_cipher_abort(
             return( sli_se_opaque_cipher_abort(
                         &operation->ctx.sli_se_opaque_ctx ) );
 #endif
+#if defined(PSA_CRYPTO_DRIVER_SILABS_SI91X) && defined(SLI_CIPHER_DEVICE_SI91X)
+        case PSA_CRYPTO_SILABS_SI91X_DRIVER_ID:
+            return( sli_si91x_crypto_cipher_abort(
+                        &operation->ctx.sli_si91x_crypto_cipher_ctx  ) );
+#endif
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
     }
 
@@ -2001,6 +2225,12 @@ static inline psa_status_t psa_driver_wrapper_hash_compute(
                 alg, input, input_length, hash, hash_size, hash_length );
     if( status != PSA_ERROR_NOT_SUPPORTED )
         return( status );
+#endif
+#if defined(PSA_CRYPTO_DRIVER_SILABS_SI91X) && defined(SLI_SHA_DEVICE_SI91X)
+    status = sli_si91x_crypto_hash_compute(
+                alg, input, input_length, hash, hash_size, hash_length );
+    if( status != PSA_ERROR_NOT_SUPPORTED )
+      return( status );
 #endif
 
     /* If software fallback is compiled in, try fallback */
@@ -2403,6 +2633,24 @@ static inline psa_status_t psa_driver_wrapper_aead_encrypt(
             if( status != PSA_ERROR_NOT_SUPPORTED )
                 return( status );
 #endif
+#if defined(PSA_CRYPTO_DRIVER_SILABS_SI91X) && defined(SLI_AEAD_DEVICE_SI91X)
+            status = sli_si91x_crypto_aead_encrypt(
+                      attributes,
+                      key_buffer,
+                      key_buffer_size,
+                      alg,
+                      nonce,
+                      nonce_length,
+                      additional_data,
+                      additional_data_length,
+                      plaintext,
+                      plaintext_length,
+                      ciphertext,
+                      ciphertext_size,
+                      ciphertext_length );
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return status;
+#endif
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 
             /* Fell through, meaning no accelerator supports this operation */
@@ -2442,6 +2690,27 @@ static inline psa_status_t psa_driver_wrapper_aead_encrypt(
                         additional_data, additional_data_length,
                         plaintext, plaintext_length,
                         ciphertext, ciphertext_size, ciphertext_length ) );
+#endif
+#if defined(PSA_CRYPTO_DRIVER_SILABS_SI91X) && defined(SLI_AEAD_DEVICE_SI91X)
+#if defined(SLI_SECURE_KEY_STORAGE_DEVICE_SI91X)
+		case PSA_KEY_VOLATILE_PERSISTENT_WRAPPED:
+        case PSA_KEY_VOLATILE_PERSISTENT_WRAP_IMPORT:
+            status = sli_si91x_crypto_aead_encrypt(
+                      attributes,
+                      key_buffer,
+                      key_buffer_size,
+                      alg,
+                      nonce,
+                      nonce_length,
+                      additional_data,
+                      additional_data_length,
+                      plaintext,
+                      plaintext_length,
+                      ciphertext,
+                      ciphertext_size,
+                      ciphertext_length );
+            return status;
+#endif
 #endif
 
         default:
@@ -2511,6 +2780,24 @@ static inline psa_status_t psa_driver_wrapper_aead_decrypt(
             if( status != PSA_ERROR_NOT_SUPPORTED )
                 return( status );
 #endif
+#if defined(PSA_CRYPTO_DRIVER_SILABS_SI91X) && defined(SLI_AEAD_DEVICE_SI91X)
+            status = sli_si91x_crypto_aead_decrypt(
+                      attributes,
+                      key_buffer,
+                      key_buffer_size,
+                      alg,
+                      nonce,
+                      nonce_length,
+                      additional_data,
+                      additional_data_length,
+                      ciphertext,
+                      ciphertext_length,
+                      plaintext,
+                      plaintext_size,
+                      plaintext_length);
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return status;
+#endif
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 
             /* Fell through, meaning no accelerator supports this operation */
@@ -2550,6 +2837,27 @@ static inline psa_status_t psa_driver_wrapper_aead_decrypt(
                         additional_data, additional_data_length,
                         ciphertext, ciphertext_length,
                         plaintext, plaintext_size, plaintext_length ) );
+#endif
+#if defined(PSA_CRYPTO_DRIVER_SILABS_SI91X) && defined(SLI_AEAD_DEVICE_SI91X)
+#if defined(SLI_SECURE_KEY_STORAGE_DEVICE_SI91X)
+        case PSA_KEY_VOLATILE_PERSISTENT_WRAPPED:
+        case PSA_KEY_VOLATILE_PERSISTENT_WRAP_IMPORT:
+                status = sli_si91x_crypto_aead_decrypt(
+                                    attributes,
+                                    key_buffer,
+                                    key_buffer_size,
+                                    alg,
+                                    nonce,
+                                    nonce_length,
+                                    additional_data,
+                                    additional_data_length,
+                                    ciphertext,
+                                    ciphertext_length,
+                                    plaintext,
+                                    plaintext_size,
+                                    plaintext_length);
+                return status;
+#endif
 #endif
 
         default:
@@ -3214,6 +3522,14 @@ static inline psa_status_t psa_driver_wrapper_mac_compute(
             if( status != PSA_ERROR_NOT_SUPPORTED )
                 return( status );
 #endif
+#if defined(PSA_CRYPTO_DRIVER_SILABS_SI91X) && defined(SLI_MAC_DEVICE_SI91X)
+            status = sli_si91x_crypto_mac_compute(
+                attributes, key_buffer, key_buffer_size, alg,
+                input, input_length, mac, mac_size, mac_length
+            );
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif /* PSA_CRYPTO_DRIVER_SILABS_SI91X */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 #if defined(MBEDTLS_PSA_BUILTIN_MAC)
             /* Fell through, meaning no accelerator supports this operation */
@@ -3891,6 +4207,20 @@ static inline psa_status_t psa_driver_wrapper_key_agreement(
                                                               shared_secret,
                                                               shared_secret_size,
                                                               shared_secret_length );
+            /* Declared with fallback == true */
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif
+#if defined(PSA_CRYPTO_DRIVER_SILABS_SI91X) && defined(SLI_ECDH_DEVICE_SI91X)
+            status = sli_si91x_psa_ecdh_key_agreement( alg,
+                                                       attributes,
+                                                       key_buffer,
+                                                       key_buffer_size,
+                                                       peer_key,
+                                                       peer_key_length,
+                                                       shared_secret,
+                                                       shared_secret_size,
+                                                       shared_secret_length );
             /* Declared with fallback == true */
             if( status != PSA_ERROR_NOT_SUPPORTED )
                 return( status );
