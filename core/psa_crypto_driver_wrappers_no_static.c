@@ -84,6 +84,7 @@ psa_status_t psa_driver_wrapper_get_key_buffer_size(
     psa_key_location_t location = PSA_KEY_LIFETIME_GET_LOCATION( psa_get_key_lifetime(attributes) );
     psa_key_type_t key_type = psa_get_key_type(attributes);
     size_t key_bits = psa_get_key_bits(attributes);
+    size_t buffer_size = 0;
 
     *key_buffer_size = 0;
     switch( location )
@@ -105,6 +106,14 @@ psa_status_t psa_driver_wrapper_get_key_buffer_size(
             return( ( *key_buffer_size != 0 ) ?
                     PSA_SUCCESS : PSA_ERROR_NOT_SUPPORTED );
 #endif /* PSA_CRYPTO_DRIVER_TEST */
+
+        case PSA_KEY_LOCATION_LOCAL_STORAGE:
+            buffer_size = PSA_EXPORT_KEY_OUTPUT_SIZE( key_type, key_bits );
+            if( buffer_size == 0 ||
+                ( PSA_KEY_TYPE_IS_ECC_PUBLIC_KEY(key_type) && buffer_size == 1 ) )
+                return( PSA_ERROR_NOT_SUPPORTED );
+            *key_buffer_size = buffer_size;
+            return( PSA_SUCCESS );
 
         default:
             (void)key_type;
