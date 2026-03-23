@@ -58,6 +58,19 @@
 #endif /* SLI_PSA_DRIVER_FEATURE_OPAQUE_KEYS */
 #endif /* PSA_CRYPTO_DRIVER_SILABS_HSE */
 
+#if defined(PSA_CRYPTO_DRIVER_SILABS_VSE)
+#ifndef PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT
+#define PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT
+#endif
+#include "sli_psa_driver_features.h"
+#include "sli_cryptoacc_transparent_types.h"
+#include "sli_cryptoacc_transparent_functions.h"
+#if defined(SLI_PSA_DRIVER_FEATURE_OPAQUE_KEYS)
+#include "sli_cryptoacc_opaque_types.h"
+#include "sli_cryptoacc_opaque_functions.h"
+#endif /* SLI_PSA_DRIVER_FEATURE_OPAQUE_KEYS */
+#endif /* PSA_CRYPTO_DRIVER_SILABS_VSE */
+
 /* END-driver headers */
 
 /* Auto-generated values depending on which drivers are registered.
@@ -70,6 +83,7 @@
 #define P256_TRANSPARENT_DRIVER_ID (4)
 #define PSA_CRYPTO_SILABS_HSE_TRANSPARENT_DRIVER_ID (5)
 #define PSA_CRYPTO_SILABS_HSE_OPAQUE_DRIVER_ID (6)
+#define PSA_CRYPTO_SILABS_VSE_TRANSPARENT_DRIVER_ID (7)
 
 /* END-driver id */
 
@@ -156,6 +170,13 @@ psa_status_t psa_driver_wrapper_get_key_buffer_size(
             return ( PSA_SUCCESS );
 #endif
 
+#if defined(PSA_CRYPTO_DRIVER_SILABS_VSE) && defined(SLI_PSA_DRIVER_FEATURE_OPAQUE_KEYS)
+        case PSA_KEY_LOCATION_SL_CRYPTOACC_OPAQUE:
+            buffer_size = sizeof(sli_cryptoacc_opaque_key_context_t);
+            *key_buffer_size = buffer_size;
+            return ( PSA_SUCCESS );
+#endif
+
         default:
             (void)key_type;
             (void)key_bits;
@@ -206,6 +227,18 @@ psa_status_t psa_driver_wrapper_export_public_key(
             if( status != PSA_ERROR_NOT_SUPPORTED )
                 return( status );
 #endif // PSA_CRYPTO_DRIVER_SILABS_HSE
+
+#if defined(PSA_CRYPTO_DRIVER_SILABS_VSE)
+            status = sli_cryptoacc_transparent_export_public_key( attributes,
+                                                                  key_buffer,
+                                                                  key_buffer_size,
+                                                                  data,
+                                                                  data_size,
+                                                                  data_length );
+            /* Declared with fallback == true */
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif // PSA_CRYPTO_DRIVER_SILABS_VSE
 
 #if (defined(MBEDTLS_PSA_P256M_DRIVER_ENABLED) )
             status = p256_transparent_export_public_key
@@ -289,6 +322,14 @@ psa_status_t psa_driver_wrapper_get_builtin_key(
 #if defined(PSA_CRYPTO_DRIVER_SILABS_HSE) && defined(SLI_PSA_DRIVER_FEATURE_BUILTIN_KEYS)
         case PSA_KEY_LOCATION_SLI_SE_OPAQUE:
             return( sli_se_opaque_get_builtin_key(
+                        slot_number,
+                        attributes,
+                        key_buffer, key_buffer_size, key_buffer_length ) );
+#endif
+
+#if defined(PSA_CRYPTO_DRIVER_SILABS_VSE) && defined(SLI_PSA_DRIVER_FEATURE_BUILTIN_KEYS)
+        case PSA_KEY_LOCATION_SL_CRYPTOACC_OPAQUE:
+            return( sli_cryptoacc_opaque_get_builtin_key(
                         slot_number,
                         attributes,
                         key_buffer, key_buffer_size, key_buffer_length ) );
