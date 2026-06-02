@@ -67,6 +67,10 @@ set(TF_PSA_CRYPTO_FRAMEWORK_DIR ${CMAKE_CURRENT_SOURCE_DIR}/framework)
 if (NOT DEFINED MLDSA_NATIVE_DIR)
     set(MLDSA_NATIVE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/drivers/pqcp/mldsa-native/)
 endif()
+if(NOT DEFINED TF_PSA_CRYPTO_DISPATCH_DIR)
+    set(TF_PSA_CRYPTO_DISPATCH_DIR ${CMAKE_CURRENT_SOURCE_DIR}/dispatch)
+endif()
+
 
 # Put the version numbers into relevant files
 set(version_number_files
@@ -425,7 +429,7 @@ set(TF_PSA_CRYPTO_PRIVATE_INCLUDE_DIRS
         # psa_crypto_driver_wrappers.h is generated, so it may be in the build tree.
         ${CMAKE_CURRENT_BINARY_DIR}/core
         ${CMAKE_CURRENT_SOURCE_DIR}/core
-        ${CMAKE_CURRENT_SOURCE_DIR}/dispatch
+        ${TF_PSA_CRYPTO_DISPATCH_DIR}
         ${CMAKE_CURRENT_SOURCE_DIR}/extras
         ${CMAKE_CURRENT_SOURCE_DIR}/platform
         ${CMAKE_CURRENT_SOURCE_DIR}/utilities
