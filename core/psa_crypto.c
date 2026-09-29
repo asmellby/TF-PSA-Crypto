@@ -5749,6 +5749,8 @@ psa_status_t psa_key_derivation_abort(psa_key_derivation_operation_t *operation)
         /* The object has (apparently) been initialized but it is not
          * in use. It's ok to call abort on such an object, and there's
          * nothing to do. */
+    } else if (operation->id != 0) {
+        status = psa_driver_wrapper_key_derivation_abort(operation);
     } else
 #if defined(BUILTIN_ALG_ANY_HKDF)
     if (PSA_ALG_IS_ANY_HKDF(kdf_alg)) {
@@ -6311,6 +6313,10 @@ psa_status_t psa_key_derivation_output_bytes(
 
     operation->capacity -= output_length;
 
+    if (operation->id != 0) {
+        status = psa_driver_wrapper_key_derivation_output_bytes(
+            operation, output, output_length);
+    } else
 #if defined(BUILTIN_ALG_ANY_HKDF)
     if (PSA_ALG_IS_ANY_HKDF(kdf_alg)) {
         status = psa_key_derivation_hkdf_read(&operation->ctx.hkdf, kdf_alg,
@@ -7584,6 +7590,14 @@ static psa_status_t psa_key_derivation_input_internal(
 
     status = psa_key_derivation_check_input_type(step, key_type);
     if (status != PSA_SUCCESS) {
+        goto exit;
+    }
+
+    /* Transparent drivers may claim the operation for device-specific SECRET
+     * formats (for example PSA_ALG_TLS12_ECJPAKE_TO_PMS). */
+    status = psa_driver_wrapper_key_derivation_input_bytes(
+        operation, kdf_alg, step, data, data_length);
+    if (status != PSA_ERROR_NOT_SUPPORTED) {
         goto exit;
     }
 

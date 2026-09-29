@@ -4452,4 +4452,52 @@ static inline psa_status_t psa_driver_wrapper_pake_abort(
     }
 }
 
+/*
+ * Key derivation functions
+ *
+ * Multipart key derivation is mostly builtin today. Transparent drivers may
+ * claim an operation during input (setting operation->id) when they can handle
+ * a device-specific SECRET format. psa_key_derivation_output_bytes() then
+ * dispatches to the driver.
+ */
+static inline psa_status_t psa_driver_wrapper_key_derivation_input_bytes(
+    psa_key_derivation_operation_t *operation,
+    psa_algorithm_t alg,
+    psa_key_derivation_step_t step,
+    const uint8_t *data,
+    size_t data_length )
+{
+
+    (void) operation;
+    (void) alg;
+    (void) step;
+    (void) data;
+    (void) data_length;
+    return( PSA_ERROR_NOT_SUPPORTED );
+}
+
+static inline psa_status_t psa_driver_wrapper_key_derivation_output_bytes(
+    psa_key_derivation_operation_t *operation,
+    uint8_t *output,
+    size_t output_length )
+{
+    switch( operation->id )
+    {
+        default:
+            (void) output;
+            (void) output_length;
+            return( PSA_ERROR_BAD_STATE );
+    }
+}
+
+static inline psa_status_t psa_driver_wrapper_key_derivation_abort(
+    psa_key_derivation_operation_t *operation )
+{
+    switch( operation->id )
+    {
+        default:
+            return( PSA_SUCCESS );
+    }
+}
+
 #endif /* MBEDTLS_PSA_CRYPTO_C */

@@ -240,6 +240,10 @@ struct psa_key_derivation_s {
 #if defined(MBEDTLS_PSA_CRYPTO_CLIENT) && !defined(MBEDTLS_PSA_CRYPTO_C)
     mbedtls_psa_client_handle_t handle;
 #else
+    /** Unique ID indicating which driver got assigned to do the operation.
+     * ID value zero means the builtin software implementation is used. */
+    unsigned int MBEDTLS_PRIVATE(id);
+
     psa_algorithm_t MBEDTLS_PRIVATE(alg);
     unsigned int MBEDTLS_PRIVATE(can_output_key) : 1;
     size_t MBEDTLS_PRIVATE(capacity);
@@ -251,7 +255,7 @@ struct psa_key_derivation_s {
 #define PSA_KEY_DERIVATION_OPERATION_INIT { 0 }
 #else
 /* This only zeroes out the first byte in the union, the rest is unspecified. */
-#define PSA_KEY_DERIVATION_OPERATION_INIT { 0, 0, 0, { 0 } }
+#define PSA_KEY_DERIVATION_OPERATION_INIT { 0, 0, 0, 0, { 0 } }
 #endif
 static inline struct psa_key_derivation_s psa_key_derivation_operation_init(
     void)
