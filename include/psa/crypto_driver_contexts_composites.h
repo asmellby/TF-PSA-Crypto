@@ -182,6 +182,9 @@ typedef union {
     mbedtls_transparent_test_driver_pake_operation_t transparent_test_driver_ctx;
     mbedtls_opaque_test_driver_pake_operation_t opaque_test_driver_ctx;
 #endif
+#if defined(PSA_CRYPTO_DRIVER_SILABS_HSE) && defined(SLI_PSA_DRIVER_FEATURE_PAKE)
+    sli_se_transparent_pake_operation_t sli_se_transparent_ctx;
+#endif /* PSA_CRYPTO_DRIVER_SILABS_HSE && SLI_PSA_DRIVER_FEATURE_PAKE */
 } psa_driver_pake_context_t;
 
 #endif /* PSA_CRYPTO_DRIVER_CONTEXTS_COMPOSITES_H */

@@ -31,6 +31,11 @@
 /* Include the context structure definitions for those drivers that were
  * declared during the autogeneration process. */
 
+#if defined(PSA_CRYPTO_DRIVER_SILABS_HSE)
+#include "sli_psa_driver_features.h"
+#include "sli_se_transparent_types.h"
+#endif
+
 typedef union {
     unsigned dummy; /* Make sure this union is always non-empty */
 #if defined(MBEDTLS_PSA_BUILTIN_ALG_HKDF) || \
@@ -48,6 +53,10 @@ typedef union {
 #if defined(PSA_HAVE_SOFT_PBKDF2)
     psa_pbkdf2_key_derivation_t MBEDTLS_PRIVATE(pbkdf2);
 #endif
+#if defined(PSA_CRYPTO_DRIVER_SILABS_HSE) && defined(SLI_PSA_DRIVER_FEATURE_PAKE)
+    /* Transparent PAKE driver may store TLS PMS for KDF passthrough. */
+    sli_se_transparent_key_derivation_operation_t sli_se_transparent_ctx;
+#endif /* PSA_CRYPTO_DRIVER_SILABS_HSE && SLI_PSA_DRIVER_FEATURE_PAKE */
 } psa_driver_key_derivation_context_t;
 
 #endif /* PSA_CRYPTO_DRIVER_CONTEXTS_KEY_DERIVATION_H */

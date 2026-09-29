@@ -4321,6 +4321,16 @@ static inline psa_status_t psa_driver_wrapper_pake_setup(
             if( status != PSA_ERROR_NOT_SUPPORTED )
                 return( status );
 #endif /* PSA_CRYPTO_DRIVER_TEST */
+#if defined(PSA_CRYPTO_DRIVER_SILABS_HSE) && defined(SLI_PSA_DRIVER_FEATURE_PAKE)
+            status = sli_se_transparent_pake_setup(
+                        &operation->data.ctx.sli_se_transparent_ctx,
+                        inputs );
+            if( status == PSA_SUCCESS )
+                operation->id = PSA_CRYPTO_SILABS_HSE_TRANSPARENT_DRIVER_ID;
+            /* Declared with fallback == true */
+            if( status != PSA_ERROR_NOT_SUPPORTED )
+                return( status );
+#endif /* PSA_CRYPTO_DRIVER_SILABS_HSE && SLI_PSA_DRIVER_FEATURE_PAKE */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 #if defined(MBEDTLS_PSA_BUILTIN_PAKE)
             status = mbedtls_psa_pake_setup( &operation->data.ctx.mbedtls_ctx,
@@ -4359,6 +4369,12 @@ static inline psa_status_t psa_driver_wrapper_pake_output(
                         &operation->data.ctx.transparent_test_driver_ctx,
                         step, output, output_size, output_length ) );
 #endif /* PSA_CRYPTO_DRIVER_TEST */
+#if defined(PSA_CRYPTO_DRIVER_SILABS_HSE) && defined(SLI_PSA_DRIVER_FEATURE_PAKE)
+        case PSA_CRYPTO_SILABS_HSE_TRANSPARENT_DRIVER_ID:
+            return( sli_se_transparent_pake_output(
+                        &operation->data.ctx.sli_se_transparent_ctx,
+                        step, output, output_size, output_length ) );
+#endif /* PSA_CRYPTO_DRIVER_SILABS_HSE && SLI_PSA_DRIVER_FEATURE_PAKE */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
         default:
             (void) step;
@@ -4392,6 +4408,12 @@ static inline psa_status_t psa_driver_wrapper_pake_input(
                         step,
                         input, input_length ) );
 #endif /* PSA_CRYPTO_DRIVER_TEST */
+#if defined(PSA_CRYPTO_DRIVER_SILABS_HSE) && defined(SLI_PSA_DRIVER_FEATURE_PAKE)
+        case PSA_CRYPTO_SILABS_HSE_TRANSPARENT_DRIVER_ID:
+            return( sli_se_transparent_pake_input(
+                        &operation->data.ctx.sli_se_transparent_ctx,
+                        step, input, input_length ) );
+#endif /* PSA_CRYPTO_DRIVER_SILABS_HSE && SLI_PSA_DRIVER_FEATURE_PAKE */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
         default:
             (void) step;
@@ -4421,6 +4443,12 @@ static inline psa_status_t psa_driver_wrapper_pake_get_shared_key(
                         &operation->data.ctx.transparent_test_driver_ctx,
                         output, output_size, output_length ) );
 #endif /* PSA_CRYPTO_DRIVER_TEST */
+#if defined(PSA_CRYPTO_DRIVER_SILABS_HSE) && defined(SLI_PSA_DRIVER_FEATURE_PAKE)
+        case PSA_CRYPTO_SILABS_HSE_TRANSPARENT_DRIVER_ID:
+            return( sli_se_transparent_pake_get_implicit_key(
+                        &operation->data.ctx.sli_se_transparent_ctx,
+                        output, output_size, output_length ) );
+#endif /* PSA_CRYPTO_DRIVER_SILABS_HSE && SLI_PSA_DRIVER_FEATURE_PAKE */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
         default:
             (void) output;
@@ -4446,6 +4474,11 @@ static inline psa_status_t psa_driver_wrapper_pake_abort(
             return( mbedtls_test_transparent_pake_abort(
                         &operation->data.ctx.transparent_test_driver_ctx ) );
 #endif /* PSA_CRYPTO_DRIVER_TEST */
+#if defined(PSA_CRYPTO_DRIVER_SILABS_HSE) && defined(SLI_PSA_DRIVER_FEATURE_PAKE)
+        case PSA_CRYPTO_SILABS_HSE_TRANSPARENT_DRIVER_ID:
+            return( sli_se_transparent_pake_abort(
+                        &operation->data.ctx.sli_se_transparent_ctx ) );
+#endif /* PSA_CRYPTO_DRIVER_SILABS_HSE && SLI_PSA_DRIVER_FEATURE_PAKE */
 #endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
         default:
             return( PSA_ERROR_INVALID_ARGUMENT );
@@ -4467,6 +4500,20 @@ static inline psa_status_t psa_driver_wrapper_key_derivation_input_bytes(
     const uint8_t *data,
     size_t data_length )
 {
+#if defined(PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT)
+#if defined(PSA_CRYPTO_DRIVER_SILABS_HSE) && defined(SLI_PSA_DRIVER_FEATURE_PAKE)
+    psa_status_t status = sli_se_transparent_key_derivation_input_bytes(
+                &operation->ctx.sli_se_transparent_ctx,
+                alg, step, data, data_length );
+    if( status == PSA_SUCCESS )
+    {
+        operation->id = PSA_CRYPTO_SILABS_HSE_TRANSPARENT_DRIVER_ID;
+        return( status );
+    }
+    if( status != PSA_ERROR_NOT_SUPPORTED )
+        return( status );
+#endif /* PSA_CRYPTO_DRIVER_SILABS_HSE && SLI_PSA_DRIVER_FEATURE_PAKE */
+#endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
 
     (void) operation;
     (void) alg;
@@ -4483,6 +4530,14 @@ static inline psa_status_t psa_driver_wrapper_key_derivation_output_bytes(
 {
     switch( operation->id )
     {
+#if defined(PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT)
+#if defined(PSA_CRYPTO_DRIVER_SILABS_HSE) && defined(SLI_PSA_DRIVER_FEATURE_PAKE)
+        case PSA_CRYPTO_SILABS_HSE_TRANSPARENT_DRIVER_ID:
+            return( sli_se_transparent_key_derivation_output_bytes(
+                        &operation->ctx.sli_se_transparent_ctx,
+                        output, output_length ) );
+#endif /* PSA_CRYPTO_DRIVER_SILABS_HSE && SLI_PSA_DRIVER_FEATURE_PAKE */
+#endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
         default:
             (void) output;
             (void) output_length;
@@ -4495,6 +4550,13 @@ static inline psa_status_t psa_driver_wrapper_key_derivation_abort(
 {
     switch( operation->id )
     {
+#if defined(PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT)
+#if defined(PSA_CRYPTO_DRIVER_SILABS_HSE) && defined(SLI_PSA_DRIVER_FEATURE_PAKE)
+        case PSA_CRYPTO_SILABS_HSE_TRANSPARENT_DRIVER_ID:
+            return( sli_se_transparent_key_derivation_abort(
+                        &operation->ctx.sli_se_transparent_ctx ) );
+#endif /* PSA_CRYPTO_DRIVER_SILABS_HSE && SLI_PSA_DRIVER_FEATURE_PAKE */
+#endif /* PSA_CRYPTO_ACCELERATOR_DRIVER_PRESENT */
         default:
             return( PSA_SUCCESS );
     }
